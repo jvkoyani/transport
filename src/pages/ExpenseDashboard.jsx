@@ -66,26 +66,44 @@ export default function ExpenseDashboard() {
       </header>
 
       <div className="page">
-        {/* Period selector */}
-        <div className="period-selector">
-          <select value={month} onChange={(e) => setMonth(Number(e.target.value))}>
-            {MONTHS.map((m, i) => (
-              <option key={m} value={i}>
-                {m}
-              </option>
-            ))}
-          </select>
-          <select
-            value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
-            style={{ maxWidth: 140 }}
-          >
-            {[year - 1, year, year + 1].map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
+        {/* Period selector + Download buttons */}
+        <div className="period-selector-group">
+          <div className="period-selector">
+            <select value={month} onChange={(e) => setMonth(Number(e.target.value))}>
+              {MONTHS.map((m, i) => (
+                <option key={m} value={i}>
+                  {m}
+                </option>
+              ))}
+            </select>
+            <select
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+              style={{ maxWidth: 140 }}
+            >
+              {[year - 1, year, year + 1].map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="report-buttons">
+            <Link
+              to={`/expense/report/monthly/${year}/${month}`}
+              className="btn btn-outline"
+              style={{ fontSize: 13 }}
+            >
+              📄 Monthly Report
+            </Link>
+            <Link
+              to={`/expense/report/yearly/${year}`}
+              className="btn btn-outline"
+              style={{ fontSize: 13 }}
+            >
+              📋 Yearly Report
+            </Link>
+          </div>
         </div>
 
         {/* Current period summary */}

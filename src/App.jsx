@@ -13,6 +13,7 @@ import LorryHireForm from './pages/LorryHireForm.jsx'
 import ExpenseDashboard from './pages/ExpenseDashboard.jsx'
 import ExpenseList from './pages/ExpenseList.jsx'
 import ExpenseForm from './pages/ExpenseForm.jsx'
+import ExpenseReport from './pages/ExpenseReport.jsx'
 import Parties from './pages/Parties.jsx'
 import Trucks from './pages/Trucks.jsx'
 import Drivers from './pages/Drivers.jsx'
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="/expense/list" element={<ExpenseList />} />
           <Route path="/expense/new" element={<ExpenseForm />} />
           <Route path="/expense/:id/edit" element={<ExpenseForm />} />
+          <Route path="/expense/report/:period/:year/:month?" element={<ExpenseReport />} />
           <Route path="/account-manager" element={<Placeholder title="Account Manager" />} />
           <Route path="/setup" element={<Placeholder title="Setup" />} />
           <Route path="*" element={<Navigate to="/bilty" replace />} />
