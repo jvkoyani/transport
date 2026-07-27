@@ -21,6 +21,7 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 export default function ExpenseDashboard() {
   const [month, setMonth] = useState(new Date().getMonth())
   const [year, setYear] = useState(new Date().getFullYear())
+  const [sortCategoryBy, setSortCategoryBy] = useState('amount-desc') // amount-desc, amount-asc, name
 
   const expenses = useMemo(() => read('expenses'), [])
 
@@ -46,23 +47,37 @@ export default function ExpenseDashboard() {
   }, [expenses])
 
   const categoryStats = useMemo(() => {
-    return CATEGORIES.map((cat) => {
+    let result = CATEGORIES.map((cat) => {
       const amt = expenses
         .filter((e) => e.category === cat)
         .reduce((s, e) => s + (Number(e.amount) || 0), 0)
       return { category: cat, amount: amt }
-    })
-      .filter((s) => s.amount > 0)
-      .sort((a, b) => b.amount - a.amount)
-  }, [expenses])
+    }).filter((s) => s.amount > 0)
+
+    // Apply sorting
+    if (sortCategoryBy === 'amount-desc') {
+      result.sort((a, b) => b.amount - a.amount)
+    } else if (sortCategoryBy === 'amount-asc') {
+      result.sort((a, b) => a.amount - b.amount)
+    } else if (sortCategoryBy === 'name') {
+      result.sort((a, b) => a.category.localeCompare(b.category))
+    }
+
+    return result
+  }, [expenses, sortCategoryBy])
 
   return (
     <div>
       <header className="topbar">
         <h2 className="page-heading">Company Expenses</h2>
-        <Link to="/expense/new" className="btn btn-primary">
-          + ADD EXPENSE
-        </Link>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <Link to="/expense/list" className="btn btn-ghost">
+            📋 View List
+          </Link>
+          <Link to="/expense/new" className="btn btn-primary">
+            + ADD EXPENSE
+          </Link>
+        </div>
       </header>
 
       <div className="page">
@@ -127,7 +142,14 @@ export default function ExpenseDashboard() {
 
         {/* All-time breakdown */}
         <div className="expense-breakdown">
-          <h3>All-Time Breakdown by Category</h3>
+          <div className="breakdown-head">
+            <h3>All-Time Breakdown by Category</h3>
+            <select value={sortCategoryBy} onChange={(e) => setSortCategoryBy(e.target.value)} className="filter-select" style={{ maxWidth: 160, fontSize: 12 }}>
+              <option value="amount-desc">Amount (High)</option>
+              <option value="amount-asc">Amount (Low)</option>
+              <option value="name">Name (A-Z)</option>
+            </select>
+          </div>
           <div className="breakdown-grid">
             {categoryStats.map((s) => {
               const pct = ((s.amount / allTimeTotal) * 100).toFixed(1)

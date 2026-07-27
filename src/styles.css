@@ -1156,8 +1156,15 @@ input.highlight {
   margin-bottom: 24px;
   box-shadow: var(--shadow);
 }
-.expense-breakdown h3 {
-  margin: 0 0 16px;
+.breakdown-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+.breakdown-head h3 {
+  margin: 0;
 }
 .breakdown-grid {
   display: flex;
