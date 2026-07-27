@@ -1,99 +1,38 @@
-import { useEffect, useMemo, useState } from 'react'
-import TripForm from './TripForm.jsx'
-import TripList from './TripList.jsx'
-import { loadTrips, saveTrips } from './storage.js'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import Sidebar from './components/Sidebar.jsx'
+import Dashboard from './pages/Dashboard.jsx'
+import BiltyList from './pages/BiltyList.jsx'
+import BiltyForm from './pages/BiltyForm.jsx'
+import Parties from './pages/Parties.jsx'
+import Trucks from './pages/Trucks.jsx'
+import Drivers from './pages/Drivers.jsx'
+import Suppliers from './pages/Suppliers.jsx'
+import Placeholder from './pages/Placeholder.jsx'
 
 export default function App() {
-  const [trips, setTrips] = useState(loadTrips)
-  const [showForm, setShowForm] = useState(false)
-  const [query, setQuery] = useState('')
-
-  useEffect(() => {
-    saveTrips(trips)
-  }, [trips])
-
-  const addTrip = (trip) => {
-    setTrips((t) => [trip, ...t])
-    setShowForm(false)
-  }
-
-  const deleteTrip = (id) => {
-    if (confirm('Delete this trip?')) setTrips((t) => t.filter((x) => x.id !== id))
-  }
-
-  const changeStatus = (id, status) =>
-    setTrips((t) => t.map((x) => (x.id === id ? { ...x, status } : x)))
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return trips
-    return trips.filter((t) =>
-      [t.from, t.to, t.truck.number, t.truck.driver, ...t.products.map((p) => p.name)]
-        .join(' ')
-        .toLowerCase()
-        .includes(q),
-    )
-  }, [trips, query])
-
-  const stats = useMemo(() => {
-    const inTransit = trips.filter((t) => t.status === 'In Transit').length
-    const delivered = trips.filter((t) => t.status === 'Delivered').length
-    const freight = trips.reduce((s, t) => s + (Number(t.freight) || 0), 0)
-    return { total: trips.length, inTransit, delivered, freight }
-  }, [trips])
-
   return (
-    <div className="app">
-      <header className="topbar">
-        <div className="brand">
-          <img src="/truck.svg" alt="" className="logo" />
-          <span>
-            Transport <span className="brand-accent">Khata</span>
-          </span>
-        </div>
-        <button className="btn btn-primary" onClick={() => setShowForm((s) => !s)}>
-          {showForm ? 'Close' : '+ New Trip'}
-        </button>
-      </header>
-
-      <main className="container">
-        <section className="stats">
-          <div className="stat">
-            <span className="stat-value">{stats.total}</span>
-            <span className="stat-label">Total Trips</span>
-          </div>
-          <div className="stat">
-            <span className="stat-value">{stats.inTransit}</span>
-            <span className="stat-label">In Transit</span>
-          </div>
-          <div className="stat">
-            <span className="stat-value">{stats.delivered}</span>
-            <span className="stat-label">Delivered</span>
-          </div>
-          <div className="stat">
-            <span className="stat-value">₹{stats.freight.toLocaleString('en-IN')}</span>
-            <span className="stat-label">Total Freight</span>
-          </div>
-        </section>
-
-        {showForm && <TripForm onSave={addTrip} onCancel={() => setShowForm(false)} />}
-
-        <div className="list-head">
-          <h2>Trips</h2>
-          <input
-            className="search"
-            placeholder="Search route, truck, product…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-        </div>
-
-        <TripList trips={filtered} onDelete={deleteTrip} onStatusChange={changeStatus} />
-      </main>
-
-      <footer className="app-foot">
-        Transport Khata · Smart Transport ERP · Data saved locally in your browser
-      </footer>
+    <div className="layout">
+      <Sidebar />
+      <div className="content">
+        <Routes>
+          <Route path="/" element={<Navigate to="/bilty" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/bilty" element={<BiltyList />} />
+          <Route path="/bilty/new" element={<BiltyForm />} />
+          <Route path="/bilty/:id/edit" element={<BiltyForm />} />
+          <Route path="/party" element={<Parties />} />
+          <Route path="/supplier" element={<Suppliers />} />
+          <Route path="/truck" element={<Trucks />} />
+          <Route path="/driver" element={<Drivers />} />
+          <Route path="/tracking" element={<Placeholder title="Tracking" />} />
+          <Route path="/party-invoice" element={<Placeholder title="Party Invoice" />} />
+          <Route path="/lorry-hire" element={<Placeholder title="Lorry Hire" />} />
+          <Route path="/finance" element={<Placeholder title="Finance" />} />
+          <Route path="/account-manager" element={<Placeholder title="Account Manager" />} />
+          <Route path="/setup" element={<Placeholder title="Setup" />} />
+          <Route path="*" element={<Navigate to="/bilty" replace />} />
+        </Routes>
+      </div>
     </div>
   )
 }
