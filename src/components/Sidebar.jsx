@@ -10,7 +10,7 @@ const items = [
   { to: '/tracking', label: 'Tracking', icon: '📍' },
   { to: '/party-invoice', label: 'Party Invoice', icon: '📑' },
   { to: '/lorry-hire', label: 'Lorry Hire', icon: '💵' },
-  { to: '/finance', label: 'Finance', icon: '💰' },
+  { to: '/expense', label: 'Expenses', icon: '💸' },
   { to: '/account-manager', label: 'Account Manager', icon: '🗂️' },
   { to: '/setup', label: 'Setup', icon: '⚙️' },
 ]

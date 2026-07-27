@@ -82,5 +82,6 @@ export function seedIfEmpty() {
   write('bilties', [])
   write('partyInvoices', [])
   write('lorryHires', [])
+  write('expenses', [])
   localStorage.setItem(PREFIX + 'seeded', '1')
 }
