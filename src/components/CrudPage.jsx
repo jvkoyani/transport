@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { read, insert, update, remove } from '../db.js'
 import Modal from './Modal.jsx'
+import BulkImportModal from './BulkImportModal.jsx'
 
-// Generic master-data page: a titled list + add/edit modal.
+// Generic master-data page: a titled list + add/edit modal + bulk import.
 export default function CrudPage({ title, collection, columns }) {
   const [rows, setRows] = useState(read(collection))
   const [editing, setEditing] = useState(null) // record or {} for new
   const [search, setSearch] = useState('')
+  const [showBulk, setShowBulk] = useState(false)
 
   const refresh = () => setRows(read(collection))
 
@@ -22,6 +24,20 @@ export default function CrudPage({ title, collection, columns }) {
       remove(collection, id)
       refresh()
     }
+  }
+
+  const bulkImport = (records) => {
+    if (records.length === 0) return
+    let imported = 0
+    records.forEach((rec) => {
+      const missing = columns.find((c) => c.required && !String(rec[c.key] || '').trim())
+      if (!missing) {
+        insert(collection, rec)
+        imported++
+      }
+    })
+    alert(`Imported ${imported} of ${records.length} records.${imported < records.length ? ' Some were skipped due to missing required fields.' : ''}`)
+    refresh()
   }
 
   const q = search.trim().toLowerCase()
@@ -40,9 +56,14 @@ export default function CrudPage({ title, collection, columns }) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button className="btn btn-primary" onClick={() => setEditing({})}>
-          + ADD
-        </button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button className="btn btn-ghost" onClick={() => setShowBulk(true)}>
+            📤 Bulk Import
+          </button>
+          <button className="btn btn-primary" onClick={() => setEditing({})}>
+            + ADD
+          </button>
+        </div>
       </header>
 
       <div className="page">
@@ -90,6 +111,15 @@ export default function CrudPage({ title, collection, columns }) {
           </table>
         </div>
       </div>
+
+      {showBulk && (
+        <BulkImportModal
+          title={title}
+          fieldKeys={columns.map((c) => c.key)}
+          onImport={bulkImport}
+          onClose={() => setShowBulk(false)}
+        />
+      )}
 
       {editing && (
         <RecordModal
