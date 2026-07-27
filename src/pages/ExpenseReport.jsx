@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { read } from '../db.js'
-import { COMPANY } from '../company.js'
 import { money } from '../invoice.js'
+import { useCompanySettings } from '../hooks/useCompanySettings.js'
 import { generateExpenseCSV, downloadCSV, printReport, buildReportStats } from '../utils/reportGenerator.js'
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -11,6 +11,7 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
 export default function ExpenseReport() {
   const navigate = useNavigate()
   const { period, month, year } = useParams()
+  const settings = useCompanySettings()
   const expenses = read('expenses')
 
   const filtered = useMemo(() => {
@@ -64,10 +65,10 @@ export default function ExpenseReport() {
         {/* Header */}
         <div className="report-head">
           <div className="report-company">
-            <h1>{COMPANY.name}</h1>
-            <p className="report-tagline">{COMPANY.tagline}</p>
-            <p className="report-detail">{COMPANY.address}</p>
-            <p className="report-detail">Phone: {COMPANY.phone} | Email: {COMPANY.email}</p>
+            <h1>{settings.companyName}</h1>
+            <p className="report-tagline">{settings.tagline}</p>
+            <p className="report-detail">{settings.address}</p>
+            <p className="report-detail">Phone: {settings.phone} | Email: {settings.email}</p>
           </div>
           <div className="report-title">EXPENSE REPORT</div>
         </div>
@@ -173,7 +174,7 @@ export default function ExpenseReport() {
             This is a computer-generated report. Report generated on{' '}
             {new Date().toLocaleDateString('en-IN')}
           </p>
-          <p>FOR {COMPANY.name}</p>
+          <p>FOR {settings.companyName}</p>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getById } from '../db.js'
+import { useCompanySettings } from '../hooks/useCompanySettings.js'
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 function fmtDate(iso) {
@@ -14,6 +15,7 @@ const money = (n) => '₹' + (Number(n) || 0).toLocaleString('en-IN', { minimumF
 export default function BiltyPrint() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const settings = useCompanySettings()
   const b = getById('bilties', id)
 
   useEffect(() => {
@@ -46,11 +48,15 @@ export default function BiltyPrint() {
       <div className="lr">
         <div className="lr-head">
           <div className="lr-company">
-            <img src="/truck.svg" alt="" className="lr-logo" />
+            {settings.logo ? (
+              <img src={settings.logo} alt="Logo" className="lr-logo" />
+            ) : (
+              <img src="/truck.svg" alt="" className="lr-logo" />
+            )}
             <div>
-              <h1>PUSHPAK ROADLINES</h1>
-              <p>Transport Contractors &amp; Commission Agents</p>
-              <p className="lr-sub">GSTIN: 24XXXXX0000X1ZX · Mob: 98250 00000</p>
+              <h1>{settings.companyName}</h1>
+              <p>{settings.tagline}</p>
+              <p className="lr-sub">GSTIN: {settings.gstin} · Mob: {settings.phone}</p>
             </div>
           </div>
           <div className="lr-title">
@@ -134,8 +140,7 @@ export default function BiltyPrint() {
             <h4>Private Mark</h4>
             <p>{materials.map((m) => m.privateMark).filter(Boolean).join(', ') || '—'}</p>
             <p className="lr-terms">
-              Goods transported at owner's risk. Company not responsible for
-              leakage, breakage or loss by fire/accident.
+              {settings.termsConditions}
             </p>
           </div>
           <table className="lr-freight">
@@ -154,7 +159,7 @@ export default function BiltyPrint() {
 
         <div className="lr-sign">
           <div>Receiver's Signature</div>
-          <div>For PUSHPAK ROADLINES</div>
+          <div>For {settings.companyName}</div>
         </div>
       </div>
     </div>

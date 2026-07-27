@@ -1,11 +1,12 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { getById } from '../db.js'
-import { COMPANY } from '../company.js'
 import { buildInvoice, money, amountInWords, fmtDate } from '../invoice.js'
+import { useCompanySettings } from '../hooks/useCompanySettings.js'
 
 export default function PartyInvoicePrint() {
   const { id, format } = useParams()
   const navigate = useNavigate()
+  const settings = useCompanySettings()
   const inv = getById('partyInvoices', id)
 
   if (!inv) {
@@ -38,12 +39,12 @@ export default function PartyInvoicePrint() {
                 <td colSpan="2">
                   <div className="company-head">
                     <div>
-                      <h1>{COMPANY.name}</h1>
-                      <p className="tagline">{COMPANY.tagline}</p>
-                      <p className="detail">{COMPANY.address}</p>
-                      <p className="detail">Phone: {COMPANY.phone} | E-mail: {COMPANY.email}</p>
-                      <p className="detail">PAN No.: {COMPANY.pan}</p>
-                      <p className="detail">GSTIN: {COMPANY.gstin}</p>
+                      <h1>{settings.companyName}</h1>
+                      <p className="tagline">{settings.tagline}</p>
+                      <p className="detail">{settings.address}</p>
+                      <p className="detail">Phone: {settings.phone} | E-mail: {settings.email}</p>
+                      <p className="detail">PAN No.: {settings.pan}</p>
+                      <p className="detail">GSTIN: {settings.gstin}</p>
                     </div>
                     <div className="invoice-title">TAX INVOICE</div>
                   </div>
@@ -64,7 +65,7 @@ export default function PartyInvoicePrint() {
                 <td colSpan="1">
                   <strong>Invoice Number :</strong> {inv.invoiceNumber}<br />
                   <strong>Invoice Date :</strong> {inv.date}<br />
-                  <strong>Invoice Branch :</strong> {COMPANY.branch}
+                  <strong>Invoice Branch :</strong> {settings.address.split(',')[0]}
                 </td>
               </tr>
             </tbody>
@@ -118,10 +119,10 @@ export default function PartyInvoicePrint() {
                 <td style={{ width: '50%', verticalAlign: 'top' }}>
                   <p>
                     <strong>PAYMENTS SHOULD BE MADE INTO THE FAVOUR OF</strong><br />
-                    M/s "{COMPANY.name}"<br />
-                    Bank Name : {COMPANY.bankName}<br />
-                    Account No. : {COMPANY.accountNo}<br />
-                    IFSC/RTGS CODE: {COMPANY.ifsc}
+                    M/s "{settings.companyName}"<br />
+                    Bank Name : {settings.bankName}<br />
+                    Account No. : {settings.accountNo}<br />
+                    IFSC/RTGS CODE: {settings.ifsc}
                   </p>
                 </td>
                 <td style={{ verticalAlign: 'top' }}>
@@ -181,7 +182,7 @@ export default function PartyInvoicePrint() {
                   <p style={{ height: 60 }}></p>
                 </td>
                 <td style={{ verticalAlign: 'bottom', textAlign: 'center' }}>
-                  <p>FOR {COMPANY.name}</p>
+                  <p>FOR {settings.companyName}</p>
                   <p style={{ height: 60 }}></p>
                   <p>Authorised Signatory</p>
                 </td>
@@ -190,7 +191,7 @@ export default function PartyInvoicePrint() {
           </table>
 
           <p className="invoice-footer-text">
-            This is a computer-generated report and does not require a signature.
+            {settings.invoiceFooter}
           </p>
         </div>
 
@@ -224,7 +225,7 @@ export default function PartyInvoicePrint() {
         )}
 
         <div className="invoice-powered">
-          Powered By <strong>PUSHPAK ROADLINES</strong>
+          Powered By <strong>{settings.companyName}</strong>
         </div>
       </div>
     </div>

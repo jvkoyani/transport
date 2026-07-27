@@ -18,6 +18,7 @@ import Parties from './pages/Parties.jsx'
 import Trucks from './pages/Trucks.jsx'
 import Drivers from './pages/Drivers.jsx'
 import Suppliers from './pages/Suppliers.jsx'
+import Setup from './pages/Setup.jsx'
 import Placeholder from './pages/Placeholder.jsx'
 
 export default function App() {
@@ -52,7 +53,7 @@ export default function App() {
           <Route path="/expense/:id/edit" element={<ExpenseForm />} />
           <Route path="/expense/report/:period/:year/:month?" element={<ExpenseReport />} />
           <Route path="/account-manager" element={<Placeholder title="Account Manager" />} />
-          <Route path="/setup" element={<Placeholder title="Setup" />} />
+          <Route path="/setup" element={<Setup />} />
           <Route path="*" element={<Navigate to="/bilty" replace />} />
         </Routes>
       </div>
