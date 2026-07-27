@@ -6,6 +6,8 @@ import BiltyForm from './pages/BiltyForm.jsx'
 import BiltyPrint from './pages/BiltyPrint.jsx'
 import PartyInvoiceList from './pages/PartyInvoiceList.jsx'
 import PartyInvoiceForm from './pages/PartyInvoiceForm.jsx'
+import PartyInvoiceDetail from './pages/PartyInvoiceDetail.jsx'
+import PartyInvoicePrint from './pages/PartyInvoicePrint.jsx'
 import LorryHireList from './pages/LorryHireList.jsx'
 import LorryHireForm from './pages/LorryHireForm.jsx'
 import Parties from './pages/Parties.jsx'
@@ -33,7 +35,10 @@ export default function App() {
           <Route path="/tracking" element={<Placeholder title="Tracking" />} />
           <Route path="/party-invoice" element={<PartyInvoiceList />} />
           <Route path="/party-invoice/new" element={<PartyInvoiceForm />} />
+          <Route path="/party-invoice/:id" element={<PartyInvoiceDetail />} />
           <Route path="/party-invoice/:id/edit" element={<PartyInvoiceForm />} />
+          <Route path="/party-invoice/:id/print" element={<PartyInvoicePrint />} />
+          <Route path="/party-invoice/:id/print-no-annex" element={<PartyInvoicePrint />} />
           <Route path="/lorry-hire" element={<LorryHireList />} />
           <Route path="/lorry-hire/new" element={<LorryHireForm />} />
           <Route path="/lorry-hire/:id/edit" element={<LorryHireForm />} />

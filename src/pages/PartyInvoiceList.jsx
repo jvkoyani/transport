@@ -43,8 +43,8 @@ export default function PartyInvoiceList() {
                 <tr><td colSpan="8" className="empty-cell">No invoices yet. Click <strong>+ ADD</strong>.</td></tr>
               )}
               {invoices.map((inv) => (
-                <tr key={inv.id}>
-                  <td className="strong">{inv.invoiceNumber}</td>
+                <tr key={inv.id} onClick={() => navigate(`/party-invoice/${inv.id}`)} style={{ cursor: 'pointer' }}>
+                  <td className="strong link">{inv.invoiceNumber}</td>
                   <td>{inv.date}</td>
                   <td>{getById('parties', inv.partyId)?.name || ''}</td>
                   <td>{(inv.biltyIds || []).length}</td>
