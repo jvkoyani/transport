@@ -21,9 +21,15 @@ export default function BiltyList() {
   const [month, setMonth] = useState('all')
 
   const bilties = useMemo(() => read('bilties'), [version])
+  const partyInvoices = useMemo(() => read('partyInvoices'), [version])
+  const lorryHires = useMemo(() => read('lorryHires'), [version])
 
   const partyName = (id) => getById('parties', id)?.name || ''
   const truckNumber = (id) => getById('trucks', id)?.vehicleNumber || ''
+  const invoiceForBilty = (bid) =>
+    partyInvoices.find((inv) => (inv.biltyIds || []).includes(bid))?.invoiceNumber || ''
+  const hireForBilty = (bid) =>
+    lorryHires.find((h) => h.biltyId === bid)?.hireNumber || ''
 
   const filtered = useMemo(() => {
     return bilties.filter((b) => {
@@ -115,8 +121,8 @@ export default function BiltyList() {
                 <tr key={b.id}>
                   <td className="strong">{b.biltyNumber}</td>
                   <td>{fmtDate(b.date)}</td>
-                  <td>{b.partyInvoice || ''}</td>
-                  <td>{b.lorryHire || ''}</td>
+                  <td>{invoiceForBilty(b.id)}</td>
+                  <td>{hireForBilty(b.id)}</td>
                   <td>{truckNumber(b.truckId)}</td>
                   <td className="route-cell">
                     {b.from} <span className="route-arrow">➜</span> {b.to}
@@ -128,8 +134,8 @@ export default function BiltyList() {
                     <div className="row-actions">
                       <button
                         className="icon-btn icon-pdf"
-                        title="PDF"
-                        onClick={() => alert('PDF export coming soon for Bilty ' + b.biltyNumber)}
+                        title="PDF / Print LR"
+                        onClick={() => navigate(`/bilty/${b.id}/print`)}
                       >
                         PDF
                       </button>

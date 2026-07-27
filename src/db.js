@@ -80,5 +80,7 @@ export function seedIfEmpty() {
     { id: newId(), name: 'Shree Transport Suppliers', city: 'Ahmedabad', phone: '9825200001' },
   ])
   write('bilties', [])
+  write('partyInvoices', [])
+  write('lorryHires', [])
   localStorage.setItem(PREFIX + 'seeded', '1')
 }

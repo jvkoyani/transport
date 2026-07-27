@@ -22,6 +22,18 @@ data — parties, trucks and drivers.
     CGST/SGST/IGST %, auto-computed tax, bilty amount, extra charges, auto
     **Final Bilty Payable**, payment type and GST paid-by. Hide toggle.
 
+### Billing & print
+- **LR / Bilty PDF** — each bilty prints as a professional **Lorry Receipt**
+  (company header, consignor/consignee, route, vehicle, material table, freight
+  summary and signature). Open it from the **PDF** action in the bilty list;
+  use the browser's Print dialog to save as PDF.
+- **Party Invoice** — bill a party by selecting its bilties; auto-totals with
+  GST into a grand total. The bilty list shows the invoice number against each
+  billed bilty.
+- **Lorry Hire** — record hire paid to a truck supplier/owner against a bilty
+  (hire amount, advance, commission %, auto balance payable). The bilty list
+  shows the hire number against each bilty.
+
 ### Master data
 - **Party** — consignor/consignee/paid-by directory (name, city, GSTIN, phone)
 - **Truck** — vehicles (number, type, size, capacity, owner)
@@ -29,8 +41,8 @@ data — parties, trucks and drivers.
 - **Supplier** — supplier directory
 - **Dashboard** — headline counts and total freight payable
 
-Other modules (Tracking, Party Invoice, Lorry Hire, Finance, Account Manager,
-Setup) are stubbed in the navigation as roadmap items.
+Other modules (Tracking, Finance, Account Manager, Setup) are stubbed in the
+navigation as roadmap items.
 
 Data is persisted in the browser (localStorage) and seeded with demo records on
 first run, so all dropdowns and lists work immediately.
@@ -66,11 +78,14 @@ src/
     Dashboard.jsx
     BiltyList.jsx       # bilty table
     BiltyForm.jsx       # 3-section create/edit bilty
+    BiltyPrint.jsx      # LR / consignment note print view
+    PartyInvoiceList.jsx  PartyInvoiceForm.jsx
+    LorryHireList.jsx     LorryHireForm.jsx
     Parties.jsx  Trucks.jsx  Drivers.jsx  Suppliers.jsx
     Placeholder.jsx     # roadmap modules
 ```
 
 ## Roadmap
-- PDF export of a bilty (LR print), real-time tracking
-- Party Invoice & Lorry Hire billing, Finance ledgers
-- Backend + database and OTP login for multi-user access
+- Real-time tracking, Finance ledgers
+- **Backend + database** and OTP login so data is shared across devices/users
+  (the current build persists per-browser in localStorage)
