@@ -107,6 +107,165 @@ db.serialize(() => {
     )
   `)
 
+  // Settings table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS settings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER NOT NULL,
+      logo TEXT,
+      companyName TEXT,
+      tagline TEXT,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (userId) REFERENCES users(id)
+    )
+  `)
+
+  // Parties table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS parties (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      mobile TEXT,
+      email TEXT,
+      gst TEXT,
+      address TEXT,
+      city TEXT,
+      state TEXT,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (userId) REFERENCES users(id)
+    )
+  `)
+
+  // Suppliers table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS suppliers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      mobile TEXT,
+      email TEXT,
+      gst TEXT,
+      address TEXT,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (userId) REFERENCES users(id)
+    )
+  `)
+
+  // Trucks table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS trucks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER NOT NULL,
+      registrationNumber TEXT NOT NULL UNIQUE,
+      truckType TEXT,
+      capacity TEXT,
+      ownerName TEXT,
+      ownerMobile TEXT,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (userId) REFERENCES users(id)
+    )
+  `)
+
+  // Drivers table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS drivers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      mobile TEXT UNIQUE,
+      licenseNumber TEXT,
+      licenseExpiry TEXT,
+      address TEXT,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (userId) REFERENCES users(id)
+    )
+  `)
+
+  // Bilties table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS bilties (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER NOT NULL,
+      biltyNumber TEXT NOT NULL UNIQUE,
+      fromLocation TEXT,
+      toLocation TEXT,
+      partyId INTEGER,
+      truckId INTEGER,
+      driverId INTEGER,
+      items TEXT,
+      totalWeight TEXT,
+      totalAmount DECIMAL(10, 2),
+      status TEXT DEFAULT 'draft',
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (userId) REFERENCES users(id),
+      FOREIGN KEY (partyId) REFERENCES parties(id),
+      FOREIGN KEY (truckId) REFERENCES trucks(id),
+      FOREIGN KEY (driverId) REFERENCES drivers(id)
+    )
+  `)
+
+  // Party Invoices table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS partyInvoices (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER NOT NULL,
+      invoiceNumber TEXT NOT NULL UNIQUE,
+      partyId INTEGER,
+      biltyIds TEXT,
+      totalAmount DECIMAL(10, 2),
+      gstAmount DECIMAL(10, 2),
+      netAmount DECIMAL(10, 2),
+      status TEXT DEFAULT 'draft',
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (userId) REFERENCES users(id),
+      FOREIGN KEY (partyId) REFERENCES parties(id)
+    )
+  `)
+
+  // Lorry Hire table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS lorryHire (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER NOT NULL,
+      hireNumber TEXT NOT NULL UNIQUE,
+      driverId INTEGER,
+      truckId INTEGER,
+      fromLocation TEXT,
+      toLocation TEXT,
+      hireAmount DECIMAL(10, 2),
+      status TEXT DEFAULT 'draft',
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (userId) REFERENCES users(id),
+      FOREIGN KEY (driverId) REFERENCES drivers(id),
+      FOREIGN KEY (truckId) REFERENCES trucks(id)
+    )
+  `)
+
+  // Expenses table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS expenses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER NOT NULL,
+      expenseNumber TEXT NOT NULL UNIQUE,
+      category TEXT,
+      amount DECIMAL(10, 2),
+      description TEXT,
+      status TEXT DEFAULT 'draft',
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (userId) REFERENCES users(id)
+    )
+  `)
+
   // Seed default user for testing
   db.run(
     `INSERT OR IGNORE INTO users (mobileNumber, companyName, email, passwordHash)
@@ -387,16 +546,356 @@ app.put('/api/auth/profile', authenticateToken, async (req, res) => {
 
 // ==================== DATA ENDPOINTS ====================
 
-// Get all data (bilties, parties, etc.) for authenticated user
-app.get('/api/data/:collection', authenticateToken, async (req, res) => {
+// PARTIES - CRUD Operations
+app.get('/api/parties', authenticateToken, async (req, res) => {
   try {
-    const { collection } = req.params
-    // For now, return empty array - will be expanded per collection
-    // This allows frontend to fetch data while maintaining auth
-    res.json([])
+    const parties = await dbAll('SELECT * FROM parties WHERE userId = ? ORDER BY createdAt DESC', [req.user.id])
+    res.json(parties)
   } catch (error) {
-    console.error('Get data error:', error)
-    res.status(500).json({ error: 'Failed to fetch data' })
+    res.status(500).json({ error: 'Failed to fetch parties' })
+  }
+})
+
+app.post('/api/parties', authenticateToken, async (req, res) => {
+  try {
+    const { name, mobile, email, gst, address, city, state } = req.body
+    const result = await dbRun(
+      'INSERT INTO parties (userId, name, mobile, email, gst, address, city, state) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [req.user.id, name, mobile, email, gst, address, city, state]
+    )
+    res.json({ id: result.lastID, ...req.body, userId: req.user.id })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create party' })
+  }
+})
+
+app.put('/api/parties/:id', authenticateToken, async (req, res) => {
+  try {
+    const { name, mobile, email, gst, address, city, state } = req.body
+    await dbRun(
+      'UPDATE parties SET name=?, mobile=?, email=?, gst=?, address=?, city=?, state=?, updatedAt=CURRENT_TIMESTAMP WHERE id=? AND userId=?',
+      [name, mobile, email, gst, address, city, state, req.params.id, req.user.id]
+    )
+    res.json({ id: req.params.id, ...req.body })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update party' })
+  }
+})
+
+app.delete('/api/parties/:id', authenticateToken, async (req, res) => {
+  try {
+    await dbRun('DELETE FROM parties WHERE id=? AND userId=?', [req.params.id, req.user.id])
+    res.json({ message: 'Party deleted' })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete party' })
+  }
+})
+
+// SUPPLIERS - CRUD Operations
+app.get('/api/suppliers', authenticateToken, async (req, res) => {
+  try {
+    const suppliers = await dbAll('SELECT * FROM suppliers WHERE userId = ? ORDER BY createdAt DESC', [req.user.id])
+    res.json(suppliers)
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch suppliers' })
+  }
+})
+
+app.post('/api/suppliers', authenticateToken, async (req, res) => {
+  try {
+    const { name, mobile, email, gst, address } = req.body
+    const result = await dbRun(
+      'INSERT INTO suppliers (userId, name, mobile, email, gst, address) VALUES (?, ?, ?, ?, ?, ?)',
+      [req.user.id, name, mobile, email, gst, address]
+    )
+    res.json({ id: result.lastID, ...req.body, userId: req.user.id })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create supplier' })
+  }
+})
+
+app.put('/api/suppliers/:id', authenticateToken, async (req, res) => {
+  try {
+    const { name, mobile, email, gst, address } = req.body
+    await dbRun(
+      'UPDATE suppliers SET name=?, mobile=?, email=?, gst=?, address=?, updatedAt=CURRENT_TIMESTAMP WHERE id=? AND userId=?',
+      [name, mobile, email, gst, address, req.params.id, req.user.id]
+    )
+    res.json({ id: req.params.id, ...req.body })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update supplier' })
+  }
+})
+
+app.delete('/api/suppliers/:id', authenticateToken, async (req, res) => {
+  try {
+    await dbRun('DELETE FROM suppliers WHERE id=? AND userId=?', [req.params.id, req.user.id])
+    res.json({ message: 'Supplier deleted' })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete supplier' })
+  }
+})
+
+// TRUCKS - CRUD Operations
+app.get('/api/trucks', authenticateToken, async (req, res) => {
+  try {
+    const trucks = await dbAll('SELECT * FROM trucks WHERE userId = ? ORDER BY createdAt DESC', [req.user.id])
+    res.json(trucks)
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch trucks' })
+  }
+})
+
+app.post('/api/trucks', authenticateToken, async (req, res) => {
+  try {
+    const { registrationNumber, truckType, capacity, ownerName, ownerMobile } = req.body
+    const result = await dbRun(
+      'INSERT INTO trucks (userId, registrationNumber, truckType, capacity, ownerName, ownerMobile) VALUES (?, ?, ?, ?, ?, ?)',
+      [req.user.id, registrationNumber, truckType, capacity, ownerName, ownerMobile]
+    )
+    res.json({ id: result.lastID, ...req.body, userId: req.user.id })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create truck' })
+  }
+})
+
+app.put('/api/trucks/:id', authenticateToken, async (req, res) => {
+  try {
+    const { registrationNumber, truckType, capacity, ownerName, ownerMobile } = req.body
+    await dbRun(
+      'UPDATE trucks SET registrationNumber=?, truckType=?, capacity=?, ownerName=?, ownerMobile=?, updatedAt=CURRENT_TIMESTAMP WHERE id=? AND userId=?',
+      [registrationNumber, truckType, capacity, ownerName, ownerMobile, req.params.id, req.user.id]
+    )
+    res.json({ id: req.params.id, ...req.body })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update truck' })
+  }
+})
+
+app.delete('/api/trucks/:id', authenticateToken, async (req, res) => {
+  try {
+    await dbRun('DELETE FROM trucks WHERE id=? AND userId=?', [req.params.id, req.user.id])
+    res.json({ message: 'Truck deleted' })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete truck' })
+  }
+})
+
+// DRIVERS - CRUD Operations
+app.get('/api/drivers', authenticateToken, async (req, res) => {
+  try {
+    const drivers = await dbAll('SELECT * FROM drivers WHERE userId = ? ORDER BY createdAt DESC', [req.user.id])
+    res.json(drivers)
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch drivers' })
+  }
+})
+
+app.post('/api/drivers', authenticateToken, async (req, res) => {
+  try {
+    const { name, mobile, licenseNumber, licenseExpiry, address } = req.body
+    const result = await dbRun(
+      'INSERT INTO drivers (userId, name, mobile, licenseNumber, licenseExpiry, address) VALUES (?, ?, ?, ?, ?, ?)',
+      [req.user.id, name, mobile, licenseNumber, licenseExpiry, address]
+    )
+    res.json({ id: result.lastID, ...req.body, userId: req.user.id })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create driver' })
+  }
+})
+
+app.put('/api/drivers/:id', authenticateToken, async (req, res) => {
+  try {
+    const { name, mobile, licenseNumber, licenseExpiry, address } = req.body
+    await dbRun(
+      'UPDATE drivers SET name=?, mobile=?, licenseNumber=?, licenseExpiry=?, address=?, updatedAt=CURRENT_TIMESTAMP WHERE id=? AND userId=?',
+      [name, mobile, licenseNumber, licenseExpiry, address, req.params.id, req.user.id]
+    )
+    res.json({ id: req.params.id, ...req.body })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update driver' })
+  }
+})
+
+app.delete('/api/drivers/:id', authenticateToken, async (req, res) => {
+  try {
+    await dbRun('DELETE FROM drivers WHERE id=? AND userId=?', [req.params.id, req.user.id])
+    res.json({ message: 'Driver deleted' })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete driver' })
+  }
+})
+
+// BILTIES - CRUD Operations
+app.get('/api/bilties', authenticateToken, async (req, res) => {
+  try {
+    const bilties = await dbAll('SELECT * FROM bilties WHERE userId = ? ORDER BY createdAt DESC', [req.user.id])
+    res.json(bilties)
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch bilties' })
+  }
+})
+
+app.get('/api/bilties/:id', authenticateToken, async (req, res) => {
+  try {
+    const bilty = await dbGet('SELECT * FROM bilties WHERE id = ? AND userId = ?', [req.params.id, req.user.id])
+    if (!bilty) return res.status(404).json({ error: 'Bilty not found' })
+    res.json(bilty)
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch bilty' })
+  }
+})
+
+app.post('/api/bilties', authenticateToken, async (req, res) => {
+  try {
+    const { biltyNumber, fromLocation, toLocation, partyId, truckId, driverId, items, totalWeight, totalAmount, status } = req.body
+    const result = await dbRun(
+      'INSERT INTO bilties (userId, biltyNumber, fromLocation, toLocation, partyId, truckId, driverId, items, totalWeight, totalAmount, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [req.user.id, biltyNumber, fromLocation, toLocation, partyId, truckId, driverId, JSON.stringify(items), totalWeight, totalAmount, status || 'draft']
+    )
+    res.json({ id: result.lastID, ...req.body, userId: req.user.id })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create bilty' })
+  }
+})
+
+app.put('/api/bilties/:id', authenticateToken, async (req, res) => {
+  try {
+    const { biltyNumber, fromLocation, toLocation, partyId, truckId, driverId, items, totalWeight, totalAmount, status } = req.body
+    await dbRun(
+      'UPDATE bilties SET biltyNumber=?, fromLocation=?, toLocation=?, partyId=?, truckId=?, driverId=?, items=?, totalWeight=?, totalAmount=?, status=?, updatedAt=CURRENT_TIMESTAMP WHERE id=? AND userId=?',
+      [biltyNumber, fromLocation, toLocation, partyId, truckId, driverId, JSON.stringify(items), totalWeight, totalAmount, status, req.params.id, req.user.id]
+    )
+    res.json({ id: req.params.id, ...req.body })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update bilty' })
+  }
+})
+
+app.delete('/api/bilties/:id', authenticateToken, async (req, res) => {
+  try {
+    await dbRun('DELETE FROM bilties WHERE id=? AND userId=?', [req.params.id, req.user.id])
+    res.json({ message: 'Bilty deleted' })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete bilty' })
+  }
+})
+
+// INVOICES - CRUD Operations
+app.get('/api/invoices', authenticateToken, async (req, res) => {
+  try {
+    const invoices = await dbAll('SELECT * FROM partyInvoices WHERE userId = ? ORDER BY createdAt DESC', [req.user.id])
+    res.json(invoices)
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch invoices' })
+  }
+})
+
+app.post('/api/invoices', authenticateToken, async (req, res) => {
+  try {
+    const { invoiceNumber, partyId, biltyIds, totalAmount, gstAmount, netAmount, status } = req.body
+    const result = await dbRun(
+      'INSERT INTO partyInvoices (userId, invoiceNumber, partyId, biltyIds, totalAmount, gstAmount, netAmount, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [req.user.id, invoiceNumber, partyId, JSON.stringify(biltyIds), totalAmount, gstAmount, netAmount, status || 'draft']
+    )
+    res.json({ id: result.lastID, ...req.body, userId: req.user.id })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create invoice' })
+  }
+})
+
+app.put('/api/invoices/:id', authenticateToken, async (req, res) => {
+  try {
+    const { invoiceNumber, partyId, biltyIds, totalAmount, gstAmount, netAmount, status } = req.body
+    await dbRun(
+      'UPDATE partyInvoices SET invoiceNumber=?, partyId=?, biltyIds=?, totalAmount=?, gstAmount=?, netAmount=?, status=?, updatedAt=CURRENT_TIMESTAMP WHERE id=? AND userId=?',
+      [invoiceNumber, partyId, JSON.stringify(biltyIds), totalAmount, gstAmount, netAmount, status, req.params.id, req.user.id]
+    )
+    res.json({ id: req.params.id, ...req.body })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update invoice' })
+  }
+})
+
+app.delete('/api/invoices/:id', authenticateToken, async (req, res) => {
+  try {
+    await dbRun('DELETE FROM partyInvoices WHERE id=? AND userId=?', [req.params.id, req.user.id])
+    res.json({ message: 'Invoice deleted' })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete invoice' })
+  }
+})
+
+// EXPENSES - CRUD Operations
+app.get('/api/expenses', authenticateToken, async (req, res) => {
+  try {
+    const expenses = await dbAll('SELECT * FROM expenses WHERE userId = ? ORDER BY createdAt DESC', [req.user.id])
+    res.json(expenses)
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch expenses' })
+  }
+})
+
+app.post('/api/expenses', authenticateToken, async (req, res) => {
+  try {
+    const { expenseNumber, category, amount, description, status } = req.body
+    const result = await dbRun(
+      'INSERT INTO expenses (userId, expenseNumber, category, amount, description, status) VALUES (?, ?, ?, ?, ?, ?)',
+      [req.user.id, expenseNumber, category, amount, description, status || 'draft']
+    )
+    res.json({ id: result.lastID, ...req.body, userId: req.user.id })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create expense' })
+  }
+})
+
+app.put('/api/expenses/:id', authenticateToken, async (req, res) => {
+  try {
+    const { expenseNumber, category, amount, description, status } = req.body
+    await dbRun(
+      'UPDATE expenses SET expenseNumber=?, category=?, amount=?, description=?, status=?, updatedAt=CURRENT_TIMESTAMP WHERE id=? AND userId=?',
+      [expenseNumber, category, amount, description, status, req.params.id, req.user.id]
+    )
+    res.json({ id: req.params.id, ...req.body })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update expense' })
+  }
+})
+
+app.delete('/api/expenses/:id', authenticateToken, async (req, res) => {
+  try {
+    await dbRun('DELETE FROM expenses WHERE id=? AND userId=?', [req.params.id, req.user.id])
+    res.json({ message: 'Expense deleted' })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete expense' })
+  }
+})
+
+// SETTINGS - Get/Update
+app.get('/api/settings', authenticateToken, async (req, res) => {
+  try {
+    let settings = await dbGet('SELECT * FROM settings WHERE userId = ?', [req.user.id])
+    if (!settings) {
+      await dbRun('INSERT INTO settings (userId, companyName) VALUES (?, ?)', [req.user.id, 'PUSHPAK ROADLINES'])
+      settings = await dbGet('SELECT * FROM settings WHERE userId = ?', [req.user.id])
+    }
+    res.json(settings)
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch settings' })
+  }
+})
+
+app.put('/api/settings', authenticateToken, async (req, res) => {
+  try {
+    const { logo, companyName, tagline } = req.body
+    await dbRun(
+      'UPDATE settings SET logo=?, companyName=?, tagline=?, updatedAt=CURRENT_TIMESTAMP WHERE userId=?',
+      [logo, companyName, tagline, req.user.id]
+    )
+    const settings = await dbGet('SELECT * FROM settings WHERE userId = ?', [req.user.id])
+    res.json(settings)
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update settings' })
   }
 })
 
