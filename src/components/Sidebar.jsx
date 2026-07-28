@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext.jsx'
 
 const items = [
   { to: '/dashboard', label: 'Dashboard', icon: '📊' },
@@ -16,6 +17,18 @@ const items = [
 ]
 
 export default function Sidebar() {
+  const { user, logout, isAuthenticated } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    if (confirm('Are you sure you want to logout?')) {
+      await logout()
+      navigate('/login')
+    }
+  }
+
+  if (!isAuthenticated) return null
+
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -25,6 +38,18 @@ export default function Sidebar() {
           <small>Transport Contractors &amp; Commission Agents</small>
         </div>
       </div>
+
+      {/* User Info */}
+      {user && (
+        <div className="sidebar-user">
+          <div className="user-avatar">👤</div>
+          <div className="user-info">
+            <div className="user-mobile">{user.mobileNumber}</div>
+            <div className="user-company">{user.companyName}</div>
+          </div>
+        </div>
+      )}
+
       <nav className="sidebar-nav">
         {items.map((it) => (
           <NavLink
@@ -37,6 +62,13 @@ export default function Sidebar() {
           </NavLink>
         ))}
       </nav>
+
+      {/* Logout Button */}
+      <div className="sidebar-footer">
+        <button className="btn btn-logout" onClick={handleLogout}>
+          🚪 Logout
+        </button>
+      </div>
     </aside>
   )
 }
