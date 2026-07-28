@@ -27,22 +27,39 @@ app.use(express.json())
 let twilioClient = null
 let emailTransporter = null
 
-// Initialize Twilio if credentials provided
-if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
-  twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
-  console.log('✓ Twilio SMS service configured')
+// Initialize Twilio if credentials provided and valid (not placeholder)
+if (
+  process.env.TWILIO_ACCOUNT_SID &&
+  process.env.TWILIO_AUTH_TOKEN &&
+  process.env.TWILIO_PHONE_NUMBER &&
+  process.env.TWILIO_ACCOUNT_SID.startsWith('AC') // Valid Twilio SID format
+) {
+  try {
+    twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+    console.log('✓ Twilio SMS service configured')
+  } catch (err) {
+    console.warn('⚠️  Twilio configuration error:', err.message)
+  }
 }
 
-// Initialize Email if credentials provided
-if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-  emailTransporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  })
-  console.log('✓ Email OTP service configured')
+// Initialize Email if credentials provided and valid (not placeholder)
+if (
+  process.env.SMTP_USER &&
+  process.env.SMTP_PASS &&
+  !process.env.SMTP_USER.includes('gmail.com') === false // Make sure it's an email
+) {
+  try {
+    emailTransporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    })
+    console.log('✓ Email OTP service configured')
+  } catch (err) {
+    console.warn('⚠️  Email configuration error:', err.message)
+  }
 }
 
 // Database setup
