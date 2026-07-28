@@ -4,6 +4,8 @@ import dotenv from 'dotenv'
 import sqlite3 from 'sqlite3'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
+import nodemailer from 'nodemailer'
+import twilio from 'twilio'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 
@@ -15,8 +17,33 @@ const PORT = process.env.PORT || 5000
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
 // Middleware
-app.use(cors())
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'],
+  credentials: true
+}))
 app.use(express.json())
+
+// OTP Service Setup
+let twilioClient = null
+let emailTransporter = null
+
+// Initialize Twilio if credentials provided
+if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+  twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+  console.log('✓ Twilio SMS service configured')
+}
+
+// Initialize Email if credentials provided
+if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+  emailTransporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  })
+  console.log('✓ Email OTP service configured')
+}
 
 // Database setup
 const db = new sqlite3.Database(join(__dirname, 'transport.db'), (err) => {
@@ -84,6 +111,52 @@ function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString()
 }
 
+// Helper: Send OTP via SMS or Email
+async function sendOTP(mobileNumber, otp, method = 'sms') {
+  try {
+    if (method === 'sms' && twilioClient) {
+      // Send via Twilio SMS
+      await twilioClient.messages.create({
+        body: `Your Transport Khata OTP is: ${otp}. Valid for 5 minutes. Do not share with anyone.`,
+        from: process.env.TWILIO_PHONE_NUMBER,
+        to: `+91${mobileNumber}`,
+      })
+      console.log(`✓ SMS sent to ${mobileNumber}`)
+      return { success: true, method: 'sms', message: `OTP sent to +91${mobileNumber}` }
+    } else if (method === 'email' && emailTransporter) {
+      // Send via Email
+      const email = `user${mobileNumber}@transport.local`
+      await emailTransporter.sendMail({
+        from: process.env.SMTP_USER,
+        to: email,
+        subject: 'Your Transport Khata OTP',
+        html: `
+          <h2>Your OTP Code</h2>
+          <p>Your OTP is: <strong style="font-size: 24px; color: #2563eb;">${otp}</strong></p>
+          <p>Valid for 5 minutes only.</p>
+          <p>Do not share this code with anyone.</p>
+          <hr>
+          <p><small>If you didn't request this, please ignore this email.</small></p>
+        `,
+      })
+      console.log(`✓ Email OTP sent to ${email}`)
+      return { success: true, method: 'email', message: `OTP sent to email` }
+    } else {
+      // Fallback: Console only (for testing)
+      console.log(`📱 OTP for ${mobileNumber}: ${otp}`)
+      return {
+        success: true,
+        method: 'console',
+        message: 'Check server console for OTP (configure Twilio or Email for production)',
+        testOtp: process.env.NODE_ENV === 'development' ? otp : undefined
+      }
+    }
+  } catch (error) {
+    console.error(`Failed to send OTP to ${mobileNumber}:`, error)
+    throw error
+  }
+}
+
 // Helper: Run database query with promise
 function dbRun(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -133,10 +206,15 @@ function authenticateToken(req, res, next) {
 // Send OTP to mobile number
 app.post('/api/auth/send-otp', async (req, res) => {
   try {
-    const { mobileNumber } = req.body
+    const { mobileNumber, method = 'sms' } = req.body
 
     if (!mobileNumber || mobileNumber.length < 10) {
-      return res.status(400).json({ error: 'Invalid mobile number' })
+      return res.status(400).json({ error: 'Invalid mobile number. Must be 10 digits.' })
+    }
+
+    // Validate method
+    if (!['sms', 'email'].includes(method)) {
+      return res.status(400).json({ error: 'Invalid delivery method. Use "sms" or "email".' })
     }
 
     // Generate OTP
@@ -152,17 +230,17 @@ app.post('/api/auth/send-otp', async (req, res) => {
       [mobileNumber, otp, expiresAt.toISOString()]
     )
 
-    // TODO: In production, send OTP via SMS using Twilio or similar
-    console.log(`📱 OTP for ${mobileNumber}: ${otp}`)
+    // Send OTP via configured method
+    const result = await sendOTP(mobileNumber, otp, method)
 
     res.json({
-      message: 'OTP sent successfully',
-      // For testing - remove in production
-      testOtp: process.env.NODE_ENV === 'development' ? otp : undefined,
+      message: result.message || 'OTP sent successfully',
+      method: result.method,
+      testOtp: result.testOtp, // Only in development without real SMS/Email
     })
   } catch (error) {
     console.error('Send OTP error:', error)
-    res.status(500).json({ error: 'Failed to send OTP' })
+    res.status(500).json({ error: error.message || 'Failed to send OTP' })
   }
 })
 

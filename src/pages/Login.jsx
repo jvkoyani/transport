@@ -7,13 +7,15 @@ export default function Login() {
   const navigate = useNavigate()
   const { sendOtp, verifyOtp, error, setError, isAuthenticated } = useAuth()
 
-  const [step, setStep] = useState('phone') // phone, otp
+  const [step, setStep] = useState('phone') // phone, method, otp
   const [mobileNumber, setMobileNumber] = useState('9999999999')
+  const [otpMethod, setOtpMethod] = useState('sms') // sms or email
   const [otp, setOtp] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [timer, setTimer] = useState(0)
   const [testOtp, setTestOtp] = useState('')
+  const [actualMethod, setActualMethod] = useState('console') // What method was actually used
 
   // If already authenticated, redirect to dashboard
   useEffect(() => {
@@ -30,16 +32,37 @@ export default function Login() {
     }
   }, [timer])
 
-  const handleSendOtp = async (e) => {
-    e.preventDefault()
+  const handleChooseMethod = (method) => {
+    setOtpMethod(method)
+    handleSendOtp(method)
+  }
+
+  const handleSendOtp = async (method) => {
     setError(null)
     setMessage('')
     setLoading(true)
 
     try {
-      const data = await sendOtp(mobileNumber)
-      setMessage('✓ OTP sent to your mobile number')
-      setTestOtp(data.testOtp || '') // For testing in development
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+      const res = await fetch(`${API_URL}/auth/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mobileNumber, method }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+
+      setActualMethod(data.method || 'console')
+      setTestOtp(data.testOtp || '')
+
+      if (data.method === 'sms') {
+        setMessage(`✓ OTP sent via SMS to +91${mobileNumber}`)
+      } else if (data.method === 'email') {
+        setMessage('✓ OTP sent to your email')
+      } else {
+        setMessage('✓ Check server console for OTP (development mode)')
+      }
+
       setStep('otp')
       setTimer(60)
     } catch (err) {
@@ -73,9 +96,17 @@ export default function Login() {
     setLoading(true)
 
     try {
-      const data = await sendOtp(mobileNumber)
-      setMessage('✓ New OTP sent')
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+      const res = await fetch(`${API_URL}/auth/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mobileNumber, method: otpMethod }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+
       setTestOtp(data.testOtp || '')
+      setMessage('✓ New OTP sent')
       setTimer(60)
     } catch (err) {
       setError(err.message || 'Failed to resend OTP')
@@ -102,7 +133,7 @@ export default function Login() {
 
         {/* Phone Number Step */}
         {step === 'phone' && (
-          <form onSubmit={handleSendOtp} className="login-form">
+          <form onSubmit={(e) => { e.preventDefault(); setStep('method') }} className="login-form">
             <h2>Login with Mobile Number</h2>
 
             <div className="form-group">
@@ -125,8 +156,8 @@ export default function Login() {
             {error && <div className="error-message">{error}</div>}
             {message && <div className="success-message">{message}</div>}
 
-            <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? 'Sending OTP...' : 'Send OTP'}
+            <button type="submit" className="btn btn-primary" disabled={loading || mobileNumber.length !== 10}>
+              {loading ? 'Please wait...' : 'Next'}
             </button>
 
             <div className="login-footer">
@@ -135,6 +166,50 @@ export default function Login() {
               </p>
             </div>
           </form>
+        )}
+
+        {/* OTP Delivery Method Selection */}
+        {step === 'method' && (
+          <div className="login-form">
+            <h2>How to receive OTP?</h2>
+            <p className="otp-info">Choose your preferred delivery method for +91 {mobileNumber}</p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+              <button
+                type="button"
+                className="method-button"
+                onClick={() => handleChooseMethod('sms')}
+                disabled={loading}
+              >
+                <div style={{ fontSize: '24px', marginBottom: '8px' }}>📱</div>
+                <div style={{ fontWeight: 600, fontSize: '14px' }}>SMS</div>
+                <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>Receive via text message</div>
+              </button>
+              <button
+                type="button"
+                className="method-button"
+                onClick={() => handleChooseMethod('email')}
+                disabled={loading}
+              >
+                <div style={{ fontSize: '24px', marginBottom: '8px' }}>📧</div>
+                <div style={{ fontWeight: 600, fontSize: '14px' }}>Email</div>
+                <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>Receive via email</div>
+              </button>
+            </div>
+
+            {error && <div className="error-message">{error}</div>}
+            {message && <div className="success-message">{message}</div>}
+
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => setStep('phone')}
+              disabled={loading}
+              style={{ marginTop: '10px' }}
+            >
+              ← Change Number
+            </button>
+          </div>
         )}
 
         {/* OTP Verification Step */}

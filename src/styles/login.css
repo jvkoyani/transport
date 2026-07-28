@@ -408,3 +408,38 @@
   margin-right: 8px;
   font-weight: bold;
 }
+
+/* Method Selection Buttons */
+.method-button {
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+@media (prefers-color-scheme: dark) {
+  .method-button {
+    background: #1a1a1a;
+    border-color: #444;
+    color: #e0e0e0;
+  }
+}
+
+.method-button:hover:not(:disabled) {
+  border-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+  transform: translateY(-2px);
+}
+
+.method-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.method-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.15);
+}
