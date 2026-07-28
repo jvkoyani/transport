@@ -1,8 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from './context/AuthContext.jsx'
-import ProtectedRoute from './components/ProtectedRoute.jsx'
 import Sidebar from './components/Sidebar.jsx'
-import Login from './pages/Login.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import BiltyList from './pages/BiltyList.jsx'
 import BiltyForm from './pages/BiltyForm.jsx'
@@ -24,53 +21,42 @@ import Suppliers from './pages/Suppliers.jsx'
 import Setup from './pages/Setup.jsx'
 import Placeholder from './pages/Placeholder.jsx'
 
-function AppRoutes() {
+export default function App() {
   return (
     <div className="layout">
       <Sidebar />
       <div className="content">
         <Routes>
           <Route path="/" element={<Navigate to="/bilty" replace />} />
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/bilty" element={<ProtectedRoute><BiltyList /></ProtectedRoute>} />
-          <Route path="/bilty/new" element={<ProtectedRoute><BiltyForm /></ProtectedRoute>} />
-          <Route path="/bilty/:id/edit" element={<ProtectedRoute><BiltyForm /></ProtectedRoute>} />
-          <Route path="/bilty/:id/print" element={<ProtectedRoute><BiltyPrint /></ProtectedRoute>} />
-          <Route path="/party" element={<ProtectedRoute><Parties /></ProtectedRoute>} />
-          <Route path="/supplier" element={<ProtectedRoute><Suppliers /></ProtectedRoute>} />
-          <Route path="/truck" element={<ProtectedRoute><Trucks /></ProtectedRoute>} />
-          <Route path="/driver" element={<ProtectedRoute><Drivers /></ProtectedRoute>} />
-          <Route path="/tracking" element={<ProtectedRoute><Placeholder title="Tracking" /></ProtectedRoute>} />
-          <Route path="/party-invoice" element={<ProtectedRoute><PartyInvoiceList /></ProtectedRoute>} />
-          <Route path="/party-invoice/new" element={<ProtectedRoute><PartyInvoiceForm /></ProtectedRoute>} />
-          <Route path="/party-invoice/:id" element={<ProtectedRoute><PartyInvoiceDetail /></ProtectedRoute>} />
-          <Route path="/party-invoice/:id/edit" element={<ProtectedRoute><PartyInvoiceForm /></ProtectedRoute>} />
-          <Route path="/party-invoice/:id/print" element={<ProtectedRoute><PartyInvoicePrint /></ProtectedRoute>} />
-          <Route path="/party-invoice/:id/print-no-annex" element={<ProtectedRoute><PartyInvoicePrint /></ProtectedRoute>} />
-          <Route path="/lorry-hire" element={<ProtectedRoute><LorryHireList /></ProtectedRoute>} />
-          <Route path="/lorry-hire/new" element={<ProtectedRoute><LorryHireForm /></ProtectedRoute>} />
-          <Route path="/lorry-hire/:id/edit" element={<ProtectedRoute><LorryHireForm /></ProtectedRoute>} />
-          <Route path="/expense" element={<ProtectedRoute><ExpenseDashboard /></ProtectedRoute>} />
-          <Route path="/expense/list" element={<ProtectedRoute><ExpenseList /></ProtectedRoute>} />
-          <Route path="/expense/new" element={<ProtectedRoute><ExpenseForm /></ProtectedRoute>} />
-          <Route path="/expense/:id/edit" element={<ProtectedRoute><ExpenseForm /></ProtectedRoute>} />
-          <Route path="/expense/report/:period/:year/:month?" element={<ProtectedRoute><ExpenseReport /></ProtectedRoute>} />
-          <Route path="/account-manager" element={<ProtectedRoute><Placeholder title="Account Manager" /></ProtectedRoute>} />
-          <Route path="/setup" element={<ProtectedRoute><Setup /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/bilty" element={<BiltyList />} />
+          <Route path="/bilty/new" element={<BiltyForm />} />
+          <Route path="/bilty/:id/edit" element={<BiltyForm />} />
+          <Route path="/bilty/:id/print" element={<BiltyPrint />} />
+          <Route path="/party" element={<Parties />} />
+          <Route path="/supplier" element={<Suppliers />} />
+          <Route path="/truck" element={<Trucks />} />
+          <Route path="/driver" element={<Drivers />} />
+          <Route path="/tracking" element={<Placeholder title="Tracking" />} />
+          <Route path="/party-invoice" element={<PartyInvoiceList />} />
+          <Route path="/party-invoice/new" element={<PartyInvoiceForm />} />
+          <Route path="/party-invoice/:id" element={<PartyInvoiceDetail />} />
+          <Route path="/party-invoice/:id/edit" element={<PartyInvoiceForm />} />
+          <Route path="/party-invoice/:id/print" element={<PartyInvoicePrint />} />
+          <Route path="/party-invoice/:id/print-no-annex" element={<PartyInvoicePrint />} />
+          <Route path="/lorry-hire" element={<LorryHireList />} />
+          <Route path="/lorry-hire/new" element={<LorryHireForm />} />
+          <Route path="/lorry-hire/:id/edit" element={<LorryHireForm />} />
+          <Route path="/expense" element={<ExpenseDashboard />} />
+          <Route path="/expense/list" element={<ExpenseList />} />
+          <Route path="/expense/new" element={<ExpenseForm />} />
+          <Route path="/expense/:id/edit" element={<ExpenseForm />} />
+          <Route path="/expense/report/:period/:year/:month?" element={<ExpenseReport />} />
+          <Route path="/account-manager" element={<Placeholder title="Account Manager" />} />
+          <Route path="/setup" element={<Setup />} />
           <Route path="*" element={<Navigate to="/bilty" replace />} />
         </Routes>
       </div>
     </div>
-  )
-}
-
-export default function App() {
-  return (
-    <AuthProvider>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/*" element={<AppRoutes />} />
-      </Routes>
-    </AuthProvider>
   )
 }
